@@ -1,0 +1,10 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Conclusion}\label{chapter:conclusion}
+To conclude the thesis, the outcomes of design and implementation are compared to both the research questions asked in \ref{section:research_questions}, and also to each other. Firstly, the main considerations in designing the CMS, after presenting various options, could all be answered in a purposeful discussion leading to a clearly most suitable solution, which was manifested in the final concept of the management system. 
+The conceptual question of where in the system such a manager should reside without introducing a single point of failure was answered by a centralised redundant system. This system was designed to receive checkpoints whenever they are created by an RTCR via a hybrid of DSM and publish/subscribe. The secure storage of checkpoints is handled by a NAS component from which checkpoints can be retrieved for migration and restoration. Available RAM, available capabilities and CPU status where selected as metrics to distinguish ECUs from another for migration suitability, answering the final research question.
+
+Unfortunately, some aspects of these concepts could not be fully implemented. This includes the introduction of the CMS as a single point of failure, as a redundant manager was not introduced and tested. Also, the realisation of Weidinger's distributed shared memory, the completely secure storage of checkpoints because of missing RAID configuration of the NAS, and the inclusion of an ECUs CPU usage in the metrics for selecting a migration target are absent. However, a basis for further work with operational main functionalities of sending, storing, retrieving, migrating, and restoring checkpoints could be established, resulting in a successful proof of concept. 
+
+Overall, it seems that the concept could address the problem of checkpoint management in the right way, and after correcting the limitations it could be usefully integrated into the vision of KIA4SM.

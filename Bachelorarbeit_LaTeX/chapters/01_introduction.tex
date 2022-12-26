@@ -1,0 +1,20 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Introduction}\label{chapter:introduction}
+
+Embedded distributed systems are ubiquitous in our day to day lives and completely essential in their respective operational areas, be it in automotive, aerospace or industrial fields. There should be no doubt that these domains are thus required to be prepared for a technological shift towards smart computing. The project KIA4SM addresses these issues by envisioning larger homogeneity through virtualised software platforms, and therefore easier cooperation of both the electronic control units (ECUs) composing the embedded distributed system and across system boundaries, to provide an architecture for future smart mobility solutions. 
+
+One of the most important aspects of these systems, especially in automotive and aerospace realms is safety, as system failure could have detrimental outcomes. These system failures can occur through simple hardware or software failures, or possibly by missing an internal schedule, as embedded systems in these fields mostly have to be real-time capable. Currently, the most common solution for this issue is covered by system redundancy, but with the growing number of ECUs in these distributed systems, this approach is becoming less feasible, as for every active ECU there would have to exist an identical, inactive ECU as a backup.
+
+The resolution to this problem is provided by a mixture of KIA4SM itself and a system that was built on the its ideological foundation: the Real-Time Checkpoint Restore (RTCR), based on the L4 Fiasco.OC microkernel and the Genode operating system framework. Because of the homogeneity, every ECU is now able to perform a multitude of tasks, creating what basically are inherently redundant systems. In combination with a checkpoint-restore mechanism that has real-time capability, a similar failure safety is achieved. To ultimately gain theoretically complete failure prevention, one problem still has to be addressed: what if either the RTCR or the ECU itself stop working due to a software issue or a hardware outage? It is therefore required in this case to have some sort of checkpoint management system (CMS), that is able to receive a checkpoint, store it securely, and migrate the process to another ECU and restore it there.
+The substance of this thesis is an explanation of the foundation, the concept, the prototypical implementation and the evaluation of such a system. \cite{kia4sm} \cite{rtcr}
+
+\section{Research Questions}\label{section:research_questions}
+To achieve a more precise idea of the considerations made in designing and implementing a checkpoint management system, following research questions are asked, and answered during the course of the thesis.
+\begin{itemize}
+    \item Where in the system should such a management system reside and how can it be prevented to introduce it as a single point of failure?
+    \item In what way and how often does it receive checkpoints from RTCRs?
+    \item How and where are checkpoints stored so that they can be considered secure?
+    \item Which ECU is selected for migration and restoration, and why?
+\end{itemize}

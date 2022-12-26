@@ -1,0 +1,21 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Limitations and Future Work}\label{chapter:limitations_and_future_work}
+Even though the fundamental structure of the checkpoint management system is operational as found in chapter \ref{chapter:evaluation}, a few limitations remain which can be improved on. Additionally, this chapter describes possible future work, in which aspects of the CMS and components around it, that where not part of this thesis, could be advanced. 
+\subsubsection{Redundancy}
+The first limitation is that the conceptualised redundancy of the checkpoint management system was not introduced to the prototypical system scenario. This would necessitate a mutex inside the NAS, so that it is impossible for a checkpoint to be retrieved twice. Furthermore, every time the RTCR-dummies currently contact the manager over network, every redundant manager would have to receive the same information. Therefore the RTCR would also need to know on which IP these are available.
+\subsubsection{Distributed Shared Memory}
+As already touched on in chapter \ref{chapter:implementation}, the idea of using the DSM implemented by Weidinger, also could not be realised, because porting it to the current version of Genode would have been necessary. Instead of just porting the DSM, it would be more sensible to update the main functionality and integrate that directly into the CMS and RTCR, where instead of using broker components the proposed broker threads are used. 
+The current temporary implementation of these brokers also suffers from a race condition: it is possible for the manager to receive the notification by the RTCR that a new checkpoint is available, while the broker has not finished writing it to memory. Fixing this with asynchronous signalling using \verb|Genode::Signal_context| and \verb|Genode::Signal_receiver| was attempted, but eventually postponed. This approach is still regarded as the most likely solution to this issue.
+\subsubsection{Dynamic IP and MAC Determination}
+Another, albeit small improvement, is to replace the current static, hard-coded IP distribution with a DHCP, and to find a way to determine the values of IP and MAC dynamically inside the code.
+\subsubsection{Selection of the Migration Target}
+The migration of checkpoints also presents possibilities for improvement. Firstly, the CPU usage of an ECU is currently not part of the metric for migration target selection. If there is a way to determine this value in Genode, this should be incorporated both into the RTCRs system information interface and into the metric itself. The second aspect is that currently the manager refuses migration to the machine that originally called for it. As already mentioned, this needs to be changed so that not only single RTCR system scenarios are possible, but the RTCR is also able to stop execution of the target child when it calls for migration.
+\subsubsection{Physical Test Bench and RTCR Integration}
+The next step of improving the NAS is to set it up in a real RAID configuration, but since this is only feasible with physical drives, a test bench with multiple ECUs and such a NAS would first have to be configured. Such a physical testing setup would then also allow the proper testing of the RTCR and CMS communication using the RPC interface in case they are on the same ECU. 
+
+Moreover, since the RTCR in the prototypical system scenario is only a dummy, future work also includes integrating the real RTCR into the system. To achieve this, the RTCR has to be ported to the current version of Genode. Furthermore, the necessary interfaces of ECU information and restoration over Ethernet, need to be implemented into the RTCR component. 
+\subsubsection{Real-Time Capability}
+After such improvements, the CMS has to be tested for real-time capability, preferably using a test bench like the one proposed in the last paragraph. Such a capability is important for the CMS, as the underlying RTCR has it as a requirement, and a manager without it would jeopardise this essential functionality. If these tests imply no real-time capability, concept and implementation of the CMS needs to be improved until this goal is reached.
+

@@ -1,0 +1,53 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Evaluation}\label{chapter:evaluation}
+To be regarded as a successful prototype, the following aspects of the CMS need to be operational.
+\begin{itemize}
+    \item Operational pseudo DSM establishment 
+    \item The manager's broker correctly writing the checkpoint to local memory
+    \item Successful checkpoint storing within the NAS
+    \item Retrieval of the checkpoint of the process for which migration was called
+    \item Restoration on the expected RTCR
+\end{itemize}
+Evaluation was performed by testing the entire process of the RTCR by first establishing a pseudo DSM, sending a checkpoint to the manager and having it store it on the NAS and then calling for migration, which would restore the checkpoint on the other RTCR-dummy running in the system. The checkpoint being sent to the manager in this case is just the name of the RTCR-dummy component it originates from, so that it is possible to trace the two checkpoints to their location of restoration. The initial size of the memory established for DSM purposes is 4096 bytes, with the mentioned checkpoint residing in a eight byte reserved space at an offset of 64 bytes. The values of DSM size and offset were chosen for no specific reason other than to test with non trivial parameters, e.g. an offset of zero. Starting the execution of the system scenario then results in an output of documentation of different breakpoints being reached in the code, and at the end if and what checkpoint reached the migration and restoration interface of the RTCR-dummy. Such an output is presented in the following.
+\begin{lstlisting}[caption={Output if no socket connections fail (warnings for invalid signal-context capability omitted).}]
+Genode 21.08 <local changes>
+232 MiB RAM and 9239 caps assigned to init
+[init -> drivers -> nic_drv] --- LAN9118 NIC driver started ---
+[init -> drivers -> nic_drv] id/rev:      0x1180001
+[init -> drivers -> nic_drv] byte order:  0x87654321
+[init -> drivers -> nic_drv] MAC address: 52:54:00:12:34:56
+[init -> drivers -> nic_drv] MAC address 52:54:00:12:34:56
+[init -> rtcr_dummy_2] lwIP Nic interface down
+[init -> nas] lwIP Nic interface down
+[init -> manager] lwIP Nic interface down
+[init -> nas] lwIP Nic interface up address=10.0.2.2 netmask=0.0.0.0 gateway=0.0.0.0
+[init -> manager] lwIP Nic interface up address=10.0.0.2 netmask=0.0.0.0 gateway=0.0.0.0
+[init -> rtcr_dummy_2] lwIP Nic interface up address=10.0.1.3 netmask=0.0.0.0 gateway=0.0.0.0
+[init -> rtcr_dummy_1] lwIP Nic interface down
+[init -> rtcr_dummy_1] lwIP Nic interface up address=10.0.1.2 netmask=0.0.0.0 gateway=0.0.0.0
+[init -> manager] Creating root component
+[init -> rtcr_dummy_2] Connecting to manager for DSM establishment
+[init -> rtcr_dummy_1] Connecting to manager for DSM establishment
+[init -> manager] [broker] Connection to broker successful. Establishing DSM on 1025
+[init -> manager] [broker] Done updating memory
+[init -> manager] [broker] Connection to broker successful. Establishing DSM on 1026
+[init -> manager] [broker] Done updating memory
+[init -> rtcr_dummy_2] [broker] Notification of new CP sent
+[init -> rtcr_dummy_1] [broker] Notification of new CP sent
+[init -> manager] [NAS thread] Checkpoint successfully sent to NAS
+[init -> nas] Checkpoint was stored successfully
+[init -> nas] Checkpoint was stored successfully
+[init -> manager] [NAS thread] Checkpoint successfully sent to NAS
+[init -> rtcr_dummy_2] Calling for migration
+[init -> rtcr_dummy_1] Calling for migration
+[init -> nas] Checkpoint retrieved, sending to manager
+[init -> nas] Checkpoint retrieved, sending to manager
+[init -> rtcr_dummy_1] [Migr thread] Checkpoint dummy_2 received. Migration successful
+[init -> rtcr_dummy_2] [Migr thread] Checkpoint dummy_1 received. Migration successful
+\end{lstlisting}
+Each line of system log is prefaced by the component printing in square brackets, after which follows the name of the thread in additional square brackets. If no thread is specified the main thread of the component is responsible. Lines three to 15 are all automatic prints performed by the lwIP network stack and the NIC-driver and router. Here a first remark has to be made: netmask and gateway are set to all zeroes, even though they were set up differently in the run-script, for reasons unknown. After the network is set up, the manager creates its RPC interface for local access. This interface was not tested, as this would necessitate a completely new system scenario without any networking, because if the manager is set up by the run-script using the network stack, it is not reachable using remote procedure calls. Even if a RTCR-dummy with the same IP as the manager was introduced in the run-script, the two components would not be part of the same machine. Further possibilities to cover this functionality are described in chapter \ref{chapter:limitations_and_future_work}. From line 17 onwards, the main operations are performed. The two dummies set up pseudo DSMs on ports selected by the manager, send a checkpoint which the broker of the manager writes to memory and logs the success thereof. Finally a notification to the manager that a new checkpoint is available is sent. Afterwards the manager spawns respective threads for storing the checkpoints to the NAS. The RTCR-dummies then wait for three seconds before calling for migration, leading to the manager spawning another two threads for retrieving the checkpoints from NAS and selecting a target for each of them, in this case the only available other RTCR-dummy. Successful migration and restoration on the expected RTCRs is then visible by \verb|rtcr_dummy_1| logging the receipt of checkpoint \verb|dummy_2| and vice versa. 
+The presented output of the system unfortunately is not always the same. More often than not, one or both of the RTCR-dummy broker print an error indicating that the socket connection to the manager has failed, ultimately resulting in an error thrown by the NAS when both RTCR-dummies call for migration. This happens because one or both RTCRs were never able to send their checkpoints to the manager, which in turn wasn't able to store them to the NAS. The first suspicion was a race condition between the broker and the NIC-router, more specifically, that the broker tries to connect to an uninitialised network stack. This can not be the case, since to be able to spawn a broker, a message has to be successfully received by both the manager and the RTCR. However, as this error only occurs intermittently, a race condition is still suspected.
+\newline \newline
+Other than that, the main functionalities outlined in the preface of this chapter, operate as conceptualised, resulting in a successful prototype.

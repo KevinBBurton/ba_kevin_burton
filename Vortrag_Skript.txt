@@ -1,0 +1,97 @@
+Folie 0:
+	-Willkommen
+	-A Checkpoint Management System for Embedded Distributed Systems based on the L4 Fiasco.OC and the Genode OS Framework
+	-Ein Checkpoint Management System für Eingebettete Verteilte Systeme basierend auf dem L4 Fiasco.OC und dem Genode OS Framework
+Folie 1:
+	-Motivieren und Kontext setzen
+Folie 2:
+	-KIA4SM voller Name nennen und erklären
+	-Sicherheit nicht durch Redundanz sondern durch RTCR+CMS
+Folie 3:
+	-RTCR by Huber, Weiterentwicklung durch Fischer
+Folie 4:
+	-Warum DSM als Foundation
+	-Broker Systematik erklären
+	-Auf fehlende Consistency Komponente hinweisen, nicht schlimm, nur eine Seite schreibt
+Folie 5:
+	-Genode für Sicherheit in eingebetteten Systemen
+	-Objektorientiert, daher abstrakter
+	-Capability als Herzstück der Architektur, ein bisschen wie ein Pointer zu einem Objekt
+	-Möglichkeit Capabilities zu delegieren
+	-Core der physische Ressourcen als RPC Objects abstrahiert, abzwackt und delegiert
+	-Client-Server Szenario durch Delegation
+Folie 6a:
+	-Konzeptualisierung aufgeteilt in Teilfragen
+Folie 6:
+	-Idee 1: Ein einzelnes CMS:
+		Vorteil: Weniger Netzwerkbelastung
+		Nachteil: Single Point of Failure
+	-Idee 2: Ein CMS auf jeder ECU:
+		Vorteil: Kein Single Point of Failure
+		Nachteil: Unnötiger Overhead
+	-Idee 3: Ein CMS mit Redundanz
+	
+	-Von einer RTCR werden Checkpoints über RPCs entgegengenommen
+Folie 7/8/9:
+	-NAS in RAID vorwegnehmen
+
+	-P/S:
+		Vorteile: Simpel, Checkpoints sind immer aktuell
+		Nachteile: CMS ist nicht transparent ggü dem RTCR, Hauptroutine des RTCR wird unterbrochen um einen neuen Checkpoint zu versenden
+	-DSM:
+		Vorteile: Transparenz, RTCR kann arbeiten wie gewohnt
+		Nachteile: Das CMS weiß nicht wann ein neue Checkpoint da ist, also müssen in einem festen Intervall alle Checkpoints im DSM abgespeichert werden
+	-Hybrid: 
+		Die beiden Komponenten bauen einen DSM auf und der Broker auf Seite des RTCRs signalisiert dem CMS, dass ein neuer Checkpoint verfügbar ist
+		Vorteile: RTCR kann normal arbeiten und es werden nur Checkpoints abgespeichert die wirklich neu sind, und das sofort
+		Nachteile: Die DSM Funktionalität müsste in CMS und RTCR integriert werden
+		
+	-Im Falle davon, dass der RTCR auf der selben ECU ist, wird ein regulärere Shared Memory aufgebaut
+		
+Folie 11:
+	-Die Migration in diesem Fall geht vom RTCR aus, z.B. für Load Balancing
+	-Der Checkpoint wird aus der Datenbank gelöscht weil die identifizierende Information jetzt alt ist und um eine doppelte Restoration durch den redundanten CMS zu verhindern
+	-Der RTCR muss ein Interfaces zur Abfrage von CPU, RAM und verfügbare CAPs haben, da das eine Metrik zur Migrationszielauswahl darstellt
+	-Der RTCR muss auch ein Interface haben um einen Prozess über Ethernet wiederherzustellen
+
+Folie 12:
+	-RTCR ist für eine alte Genode version
+	-Deswegen durch einen Dummy ersetzt der folgende Aufgaben erfüllt
+	
+Folie 13:
+	-Dasselbe mit dem DSM
+	-Dieser wurde dadurch ersetzt, dass der CMS Broker einen Server aufsetzt, zu dem der RTCR Broker seine Checkpoints und Offset des Checkpoints im eigenen Speicher sendet
+	-Der CMS Broker schreibt dann den Checkpoint mit ebendiesem Offset in den gespiegelten Speicher
+
+Folie 14:
+	-Die NIC Router Komponente bietet ein Interface um mithilfe der Socket API und dem IP Stack mit anderen Komponenten zu kommunizieren
+	-Alles ein Run-Skript also auch ein ELF Image
+	-Recht weit weg von einem realen Aufbau
+	
+Folie 15:
+	-Hauptroutine des Managers ist ein Server welcher Nachrichten in einem bestimmten Format erwartet und dann seine Funktionen ausführt
+	-Diese werden von Threads ausgeführt damit der Manager wieder neue Verbindungen annehmen kann
+	-MAC und IP müssen nicht die des Senders sein, z.B. kann ein anderer eine Restoration eines Checkpoints anstoßen
+	-Opcode 0: Etablieren eines neuen DSMs, die ersten 4 Bytes des Payloads sind dann die Größe des DSMs
+	-Opcode 1: Neuer Checkpoint, die ersten 4 Bytes sind der offset des Checkpoints und die letzten 2 die Größe des Checkpoints
+	-Opcode 2: Migration und Restoration, die ersten 4 Bytes sind der Offset des Checkpoints, ich erkläre gleich warum
+	
+Folie 16:
+	-Das Interface des NAS ist ähnlich wie der Manager
+	-Opcode 1: Speichern, der Checkpoint wird abgespeichert wobei eine Kombination von MAC und Offset den Checkpoint eindeutig identifizierende
+	-Opcode 2: Abfrage, der abgefrage Checkpoint wird verschickt und dann gelöscht
+
+Folie 18a:
+	-Vorbereiteter Output auf Fiasco.OC und RealView PBX-A9 Hardware Architektur
+	-2 RTCR dummies, 1 Manager, 1 NAS
+	-Nur die Funktionalität über Netzwerk wird getestet
+	-keine echten Checkpoints, nur Identifikation der Herkunft
+	-Gesucht ist ein erfolgreicher pseudo-DSM Aufbau, Speicherung des Checkpoints und Migration und Restoration
+
+Folie 18/19/20:
+	-Output durchgehen
+	
+Folie 21: 
+	-Mit einer physischen test bench kann dann auch die CMS Funktion über RPC getestet werden
+	-Limitierungen sind solche der Implementierung
+	-Die Hauptfunktionalitäten funktionieren und deswegen kann man von einem erfolgreichen proof-of-concept reden
